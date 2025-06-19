@@ -46,7 +46,12 @@ export default function SummarizePage() {
     setError("")
     setIsLoading(true)
     setSummary(null)
-
+    const response = await fetch("http://localhost:8000/video", {
+      method: "POST",
+      body: JSON.stringify({ url }),
+    })
+    const data = await response.json()
+    console.log(data)
     // Simulate API call with realistic delay
     setTimeout(() => {
       // Mock summary data

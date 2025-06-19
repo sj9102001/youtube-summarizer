@@ -1,26 +1,38 @@
-# Stage 1: Build the Next.js application
-FROM node:20-alpine AS builder
+# Build stage
+FROM node:20 as builder
 
 WORKDIR /app
 
-COPY package.json yarn.lock* package-lock.json* ./
-RUN npm install --frozen-lockfile # Or yarn install --frozen-lockfile
+# Copy package files
+COPY package*.json ./
 
+# Install all dependencies (including devDependencies for build)
+RUN npm ci
+
+# Copy source code
 COPY . .
 
-RUN npm run build # Or yarn build
+# Build the application
+RUN npm run build
 
-# Stage 2: Create the production image
-FROM node:20-alpine AS runner
+# Production stage
+FROM node:20-alpine
 
 WORKDIR /app
 
-ENV NODE_ENV production
+# Copy package files
+COPY package*.json ./
 
-# Copy only the necessary build output from the builder stage
+# Install only production dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy built application from builder stage
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
 
+# Expose port
 EXPOSE 3000
 
+# Start the application
 CMD ["node", "server.js"]
